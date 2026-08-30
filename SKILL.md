@@ -15,6 +15,7 @@ python3 -m pip install -r "$OIL_MOTION/scripts/requirements.txt"
 ```
 
 默认视频模型为 ZenMux `minimax/minimax-h3`。只有模型无法完成目标或用户明确指定时才更换。
+也可通过 `--provider orcarouter` 走 [OrcaRouter](https://www.orcarouter.ai) 网关调用同一个模型。
 
 ## 首次配置
 
@@ -24,6 +25,9 @@ python3 -m pip install -r "$OIL_MOTION/scripts/requirements.txt"
 python3 "$OIL_MOTION/scripts/oil_motion_config.py" status
 python3 "$OIL_MOTION/scripts/oil_motion_config.py" set
 ```
+
+需要走 OrcaRouter 网关时，改用 `set --provider orcarouter`（密钥优先读
+`ORCAROUTER_API_KEY` 环境变量）。
 
 密钥保存在 `~/.config/oil-motion/config.json`。不得写入项目、提示词、命令参数、日志或任务元数据。
 

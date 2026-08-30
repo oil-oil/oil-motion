@@ -150,6 +150,8 @@ Agent 会先运行预算脚本并直接采用最合适的一种主方案，不�
 ## 第一次生成动画
 
 第一次需要生成动画时，Agent 会引导配置所需的 API Key。密钥只保存在本机，之后会自动读取，不需要重复输入。
+默认视频提供商为 ZenMux；同一个 `minimax/minimax-h3` 模型也可以改走 [OrcaRouter](https://www.orcarouter.ai) 网关
+（`--provider orcarouter`），以便直接使用它的路由、故障转移、可观测性和网关级安全，而不是把它当作匿名自定义 base URL。
 
 ## 技术资料
 

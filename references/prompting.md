@@ -58,9 +58,11 @@ python3 "$OIL_MOTION/scripts/compose_travel_frames.py" subject.png \
 
 ## 提交视频任务（video_job.py）
 
-`video_job.py` 用于提交、轮询和下载 ZenMux / MiniMax 原生视频任务，把重复的接口
+`video_job.py` 用于提交、轮询和下载视频任务，把重复的接口
 调用、图片编码、状态轮询和结果保存程序化。提交前按 SKILL.md 的“首次配置 API Key”
-检查一次即可；脚本优先读取 `ZENMUX_API_KEY`，没有环境变量时读取本地配置。
+检查一次即可。默认提供商是 ZenMux / MiniMax 原生接口，脚本优先读取
+`ZENMUX_API_KEY`，没有环境变量时读取本地配置；也可以指定 OrcaRouter 作为
+提供商（见下方“使用 OrcaRouter 提供商”）。
 
 模式与参数约束：
 
@@ -121,6 +123,41 @@ python3 "$OIL_MOTION/scripts/video_job.py" \
 ```
 
 分辨率先用 `768p` 验证动作，最终清晰度不足再使用 `2K`。
+
+## 使用 OrcaRouter 提供商
+
+[OrcaRouter](https://www.orcarouter.ai) 是 OpenAI 兼容的 AI 网关，与 OpenRouter 一样
+暴露跨模型的 provider/model 命名空间，并叠加自适应路由、自动故障转移、零加价推理、
+可观测性、护栏与 agent 工具治理。它托管同一个 `minimax/minimax-h3` 模型，所以
+`video_job.py` 可以直接把 OrcaRouter 作为一级提供商使用，而不必把它当作匿名自定义
+base URL。
+
+先配置一次密钥（优先读取 `ORCAROUTER_API_KEY` 环境变量，没有时读取本地配置的
+`orcarouter` 段）：运行 `oil_motion_config.py set --provider orcarouter`（首次配置
+命令示例见 SKILL.md）。
+
+提交命令与 ZenMux 相同，只增加 `--provider orcarouter`；首尾帧会被翻译成
+`metadata.first_frame_image` / `metadata.last_frame_image`，`--resolution` 翻译成
+`size`（`768P` 或 `2K`），画幅放进 `metadata.ratio`：
+
+```bash
+python3 "$OIL_MOTION/scripts/video_job.py" \
+  --provider orcarouter \
+  --stage pilot \
+  --segment-index 1 \
+  --prompt-file source/prompt.txt \
+  --first-frame source/first-frame.png \
+  --loop-frame \
+  --resolution 768p \
+  --ratio 1:1 \
+  --duration 5 \
+  --seed 42 \
+  --output source/master.mp4 \
+  --metadata source/master.job.json
+```
+
+网关同样会在同一个 OpenAI 风格 `/v1/videos` 端点做逐条安全筛查（prompt/response
+默认拒绝放行），无需改动应用代码。
 
 ## 通用身份锁定段
 

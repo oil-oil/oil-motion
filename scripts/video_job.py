@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
-"""提交、轮询并下载 MiniMax H3 视频任务。
+"""Submit, poll, and download MiniMax H3 video tasks.
 
-密钥优先从 ZENMUX_API_KEY 读取，否则读取 Oil Motion 的本地配置。
-MiniMax H3 有两种互斥的图片约束模式：
+Keys are read from the provider-specific environment variable first, then from
+Oil Motion's local config. Two OpenAI-compatible providers are supported:
 
-- 闭环：同一张图同时作为 first_frame 与 last_frame。
-- 转场：不同图片分别作为 first_frame 与 last_frame。
-- 参考模式：只传 reference_image，不得与首尾帧混用。
+- zenmux (default): POST/GET {zenmux_root}/videos, payload uses a `content`
+  array of text/image_url parts with `role` markers for first/last frame.
+- orcarouter: POST/GET {orcarouter_root}/videos, payload uses the OpenAI-style
+  `prompt`, `size`, and `metadata.{ratio, first_frame_image, last_frame_image}`
+  fields. The same `minimax/minimax-h3` model id routes through OrcaRouter to
+  the upstream MiniMax video API.
+
+MiniMax H3 has two mutually exclusive image-constraint modes:
+
+- Closed loop: the same image is passed as both first_frame and last_frame.
+- Transition: different images are passed as first_frame and last_frame.
+- Reference mode: only a reference_image is passed, never mixed with frames.
 """
 
 from __future__ import annotations
@@ -30,9 +39,11 @@ from PIL import Image
 from oil_motion_config import require_api_key
 
 
-API_ROOT = "https://zenmux.ai/api/v1"
+ZENMUX_API_ROOT = "https://zenmux.ai/api/v1"
+ORCAROUTER_API_ROOT = "https://api.orcarouter.ai/v1"
 DEFAULT_MODEL = "minimax/minimax-h3"
 TERMINAL_STATES = {"succeeded", "failed", "cancelled", "canceled"}
+ORCAROUTER_TERMINAL_STATES = {"completed", "failed", "cancelled", "canceled"}
 COMMON_RATIOS = {
     "21:9": 21 / 9,
     "16:9": 16 / 9,
@@ -41,6 +52,12 @@ COMMON_RATIOS = {
     "3:4": 3 / 4,
     "9:16": 9 / 16,
 }
+
+
+def provider_api_root(provider: str) -> str:
+    if provider == "orcarouter":
+        return ORCAROUTER_API_ROOT
+    return ZENMUX_API_ROOT
 
 
 def local_image_data_uri(path: Path) -> str:
@@ -92,7 +109,7 @@ def request_json(
             return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         details = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"ZenMux API {exc.code}: {details}") from exc
+        raise RuntimeError(f"Video API {exc.code}: {details}") from exc
 
 
 def download(url: str, output: Path) -> None:
@@ -121,6 +138,12 @@ def find_status(response: dict[str, Any]) -> str:
     return "unknown"
 
 
+def status_is_terminal(status: str, provider: str) -> bool:
+    if provider == "orcarouter":
+        return status in ORCAROUTER_TERMINAL_STATES
+    return status in TERMINAL_STATES
+
+
 def walk_for_url(value: Any, preferred_keys: tuple[str, ...]) -> str | None:
     if isinstance(value, dict):
         for key in preferred_keys:
@@ -137,6 +160,14 @@ def walk_for_url(value: Any, preferred_keys: tuple[str, ...]) -> str | None:
             if found:
                 return found
     return None
+
+
+def preferred_url_keys(provider: str) -> tuple[str, ...]:
+    # OrcaRouter's OpenAI-style video object puts the download URL in
+    # metadata.url; ZenMux puts it directly on the result object.
+    if provider == "orcarouter":
+        return ("url", "video_url", "videoUrl", "download_url")
+    return ("video_url", "videoUrl", "url", "download_url")
 
 
 def redacted_metadata(
@@ -160,22 +191,17 @@ def redacted_metadata(
             return [redact_remote_urls(child) for child in value]
         return value
 
-    safe_payload = dict(payload)
-    safe_content = []
-    for item in payload.get("content", []):
-        if item.get("type") == "image_url":
-            safe_content.append(
-                {
-                    "type": "image_url",
-                    "role": item.get("role"),
-                    "image_url": {
-                        "url": "<local-image-data-uri>",
-                    },
-                }
-            )
-        else:
-            safe_content.append(item)
-    safe_payload["content"] = safe_content
+    def redact_local_data_uris(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {key: redact_local_data_uris(child) for key, child in value.items()}
+        if isinstance(value, list):
+            return [redact_local_data_uris(child) for child in value]
+        if isinstance(value, str) and value.startswith("data:"):
+            return "<local-image-data-uri>"
+        return value
+
+    safe_payload = redact_local_data_uris(payload)
+    safe_payload = redact_remote_urls(safe_payload)
     result = {
         "payload": safe_payload,
         "submit": redact_remote_urls(submit_response),
@@ -237,13 +263,13 @@ def validate_production_gate(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def build_payload(args: argparse.Namespace) -> dict[str, Any]:
+    provider = getattr(args, "provider", "zenmux")
     prompt = args.prompt
     if args.prompt_file:
         prompt = Path(args.prompt_file).read_text(encoding="utf-8").strip()
     if not prompt:
         raise ValueError("必须提供 --prompt 或 --prompt-file")
 
-    content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
     first = Path(args.first_frame).expanduser().resolve() if args.first_frame else None
     last = Path(args.last_frame).expanduser().resolve() if args.last_frame else None
     if args.loop_frame and args.last_frame:
@@ -269,41 +295,73 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     if args.duration is not None and args.duration <= 0:
         raise ValueError("--duration 必须大于 0")
 
-    if first:
-        content.append(image_content(first, "first_frame"))
-    if last:
-        content.append(image_content(last, "last_frame"))
     reference_paths = [
         Path(raw_path).expanduser().resolve() for raw_path in args.reference_image
     ]
-    for reference_path in reference_paths:
-        content.append(image_content(reference_path, "reference_image"))
 
     payload: dict[str, Any] = {
         "model": args.model,
-        "content": content,
-        "resolution": args.resolution,
-        "generate_audio": False,
-        "watermark": False,
-        "return_last_frame": True,
+        "prompt": prompt,
     }
     if args.frames is None:
         payload["duration"] = args.duration if args.duration is not None else 5
-    payload["ratio"] = args.ratio or infer_ratio(
-        first or (reference_paths[0] if reference_paths else None)
-    )
     if args.seed is not None:
         payload["seed"] = args.seed
     if args.frames is not None:
         payload["frames"] = args.frames
+
+    if provider == "orcarouter":
+        # OrcaRouter OpenAI-style video shape. MiniMax-H3 routing accepts a
+        # size (768P/2K), a text prompt, and first/last frame conditioning
+        # under metadata.{first_frame_image,last_frame_image}.
+        payload["size"] = args.resolution
+        if args.ratio:
+            payload["metadata"] = {"ratio": args.ratio}
+        elif first is not None or reference_paths:
+            payload["metadata"] = {
+                "ratio": infer_ratio(first or reference_paths[0])
+            }
+        if first:
+            metadata = payload.setdefault("metadata", {})
+            metadata["first_frame_image"] = local_image_data_uri(first)
+        if last:
+            metadata = payload.setdefault("metadata", {})
+            metadata["last_frame_image"] = local_image_data_uri(last)
+        for reference_path in reference_paths:
+            images = payload.setdefault("images", [])
+            images.append(local_image_data_uri(reference_path))
+        return payload
+
+    content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
+    if first:
+        content.append(image_content(first, "first_frame"))
+    if last:
+        content.append(image_content(last, "last_frame"))
+    for reference_path in reference_paths:
+        content.append(image_content(reference_path, "reference_image"))
+
+    payload.update(
+        {
+            "content": content,
+            "resolution": args.resolution,
+            "generate_audio": False,
+            "watermark": False,
+            "return_last_frame": True,
+        }
+    )
+    payload["ratio"] = args.ratio or infer_ratio(
+        first or (reference_paths[0] if reference_paths else None)
+    )
     return payload
 
 
 def generate(args: argparse.Namespace) -> int:
+    provider = getattr(args, "provider", "zenmux")
     # 先做纯本地参数校验，避免因为缺少密钥而掩盖组合错误。
     payload = build_payload(args)
     gate_report = validate_production_gate(args)
-    api_key = require_api_key()
+    api_root = provider_api_root(provider)
+    api_key = require_api_key(provider=provider)
 
     output = Path(args.output).expanduser().resolve()
     metadata = (
@@ -314,7 +372,7 @@ def generate(args: argparse.Namespace) -> int:
     if output.exists() and not args.force:
         raise FileExistsError(f"输出已存在：{output}；确认后使用 --force")
 
-    submit_response = request_json("POST", f"{API_ROOT}/videos", api_key, payload)
+    submit_response = request_json("POST", f"{api_root}/videos", api_key, payload)
     job_id = find_job_id(submit_response)
     print(f"任务已提交：{job_id}", flush=True)
 
@@ -323,13 +381,13 @@ def generate(args: argparse.Namespace) -> int:
     last_status = ""
     while time.monotonic() < deadline:
         final_response = request_json(
-            "GET", f"{API_ROOT}/videos/{job_id}", api_key
+            "GET", f"{api_root}/videos/{job_id}", api_key
         )
         status = find_status(final_response)
         if status != last_status:
             print(f"状态：{status}", flush=True)
             last_status = status
-        if status in TERMINAL_STATES:
+        if status_is_terminal(status, provider):
             break
         time.sleep(args.poll_interval)
     else:
@@ -351,12 +409,11 @@ def generate(args: argparse.Namespace) -> int:
     )
 
     status = find_status(final_response)
-    if status != "succeeded":
+    succeeded = status in ("succeeded", "completed")
+    if not succeeded:
         raise RuntimeError(f"视频生成未成功，状态：{status}；详情见 {metadata}")
 
-    video_url = walk_for_url(
-        final_response, ("video_url", "videoUrl", "url", "download_url")
-    )
+    video_url = walk_for_url(final_response, preferred_url_keys(provider))
     if not video_url:
         raise RuntimeError(f"任务成功但没有找到视频地址；详情见 {metadata}")
     download(video_url, output)
@@ -368,7 +425,10 @@ def generate(args: argparse.Namespace) -> int:
         else output.with_name(f"{output.stem}-last-frame.jpg")
     )
     last_frame_url = walk_for_url(
-        final_response, ("last_frame_url", "lastFrameUrl", "last_frame")
+        final_response,
+        ("last_frame_url", "lastFrameUrl", "last_frame")
+        if provider == "zenmux"
+        else ("last_frame_url", "lastFrameUrl"),
     )
     if last_frame_url:
         download(last_frame_url, last_frame_output)
@@ -393,7 +453,13 @@ def generate(args: argparse.Namespace) -> int:
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
-        description="使用 ZenMux 的 MiniMax H3 生成并下载视频动作母版"
+        description="使用 MiniMax H3 生成并下载视频动作母版"
+    )
+    result.add_argument(
+        "--provider",
+        choices=("zenmux", "orcarouter"),
+        default="zenmux",
+        help="视频提供商：zenmux（默认）或 orcarouter",
     )
     result.add_argument("--prompt")
     result.add_argument("--prompt-file")
