@@ -147,7 +147,7 @@ Programs can handle slight drift, color differences, duplicate frames, and encod
 
 ## First-time generation
 
-On the first generation, the agent walks through configuring the required API keys. Keys are stored locally only and read automatically afterward — no need to re-enter them.
+On the first generation, the agent walks through configuring the required API keys. Keys are stored locally only and read automatically afterward — no need to re-enter them. The default video provider is ZenMux; the same `minimax/minimax-h3` model can also be routed through the [OrcaRouter](https://www.orcarouter.ai) gateway (`--provider orcarouter`) when you want its routing, failover, observability, and gateway-level security instead of an anonymous base URL.
 
 ## Technical reference
 
