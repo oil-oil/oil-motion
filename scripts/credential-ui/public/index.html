@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <meta name="referrer" content="no-referrer" />
+  <title>输入密钥</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/style.css" />
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main>
+    <h1 id="heading">输入密钥</h1>
+    <p id="context" class="context">正在连接…</p>
+    <form id="credential-form" autocomplete="off">
+      <div id="fields">
+      <label for="secret" class="visually-hidden">密钥</label>
+      <input id="secret" name="secret" type="password" placeholder="粘贴 API Key" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="2500" required disabled aria-describedby="hint message" />
+      </div>
+      <button id="save" type="submit" disabled>保存</button>
+    </form>
+    <p id="hint" class="hint">仅保存到本机系统凭据库</p>
+    <p id="message" class="message" role="status" aria-live="polite" hidden></p>
+  </main>
+</body>
+</html>

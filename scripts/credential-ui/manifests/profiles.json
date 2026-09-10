@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "profiles": {
+    "default": [
+      {
+        "manifest": "default.json",
+        "env": "ZENMUX_API_KEY"
+      }
+    ]
+  }
+}

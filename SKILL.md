@@ -14,18 +14,22 @@ OIL_MOTION="<当前 SKILL.md 所在的绝对目录>"
 python3 -m pip install -r "$OIL_MOTION/scripts/requirements.txt"
 ```
 
-默认视频模型为 ZenMux `minimax/minimax-h3-max`。只有模型无法完成目标或用户明确指定时才更换。
+生成模型和服务参数由脚本及对应素材参考说明定义；已有素材不调用生成服务。只有模型无法完成目标或用户明确指定时才更换。
+
+## API Key 配置入口
+
+需要外部服务凭据时先读[API Key 配置与业务读取](references/api-key-setup.md)：复用已有安全入口；本机缺少 Key 时使用随附固定页面，保存后通过业务包装入口读取。内置能力与纯本地流程不要求配置 Key。
 
 ## 首次配置
 
 生成视频前检查一次；已配置则直接继续：
 
 ```bash
-python3 "$OIL_MOTION/scripts/oil_motion_config.py" status
-python3 "$OIL_MOTION/scripts/oil_motion_config.py" set
+node "$OIL_MOTION/scripts/credential-ui/src/profile.ts" status default
+node "$OIL_MOTION/scripts/credential-ui/src/profile.ts" setup default
 ```
 
-新密钥保存在系统凭据库，`~/.config/oil-motion/config.json` 只保存引用；旧明文配置仅兼容读取，运行配置入口后替换为引用。系统后端不可用时失败，不降级写明文。不得写入项目、提示词、命令参数、日志或任务元数据。
+新密钥保存在系统凭据库，`~/.config/oil-motion/config.json` 只保存引用；旧明文配置仅兼容读取；页面不迁移或清理旧文件。云端素材命令按配置说明通过 run 入口读取页面保存的凭据；原配置脚本仅保留给用户明确选择的终端方式。系统后端不可用时失败，不降级写明文。不得写入项目、提示词、命令参数、日志或任务元数据。
 
 ## 四个唯一事实源
 

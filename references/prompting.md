@@ -101,7 +101,7 @@ python3 "$OIL_MOTION/scripts/compose_travel_frames.py" subject.png \
 第一段 Pilot（闭环）：
 
 ```bash
-python3 "$OIL_MOTION/scripts/video_job.py" \
+node "$OIL_MOTION/scripts/credential-ui/src/profile.ts" run default -- python3 "$OIL_MOTION/scripts/video_job.py" \
   --stage pilot \
   --segment-index 1 \
   --prompt-file source/prompt.txt \
@@ -120,7 +120,7 @@ python3 "$OIL_MOTION/scripts/video_job.py" \
 第 2 段及之后的连续生产：
 
 ```bash
-python3 "$OIL_MOTION/scripts/video_job.py" \
+node "$OIL_MOTION/scripts/credential-ui/src/profile.ts" run default -- python3 "$OIL_MOTION/scripts/video_job.py" \
   --stage production \
   --segment-index 2 \
   --pilot-approval pilot/approval.json \

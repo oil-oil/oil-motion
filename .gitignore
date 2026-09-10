@@ -8,3 +8,4 @@ build/
 dist/
 tmp/
 *.job.json
+node_modules/

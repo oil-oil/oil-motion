@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "id": "oil-motion",
+  "label": "动画素材服务 API Key",
+  "credential": "oil-motion/zenmux/default",
+  "ui": {
+    "title": "配置服务",
+    "placeholder": "粘贴该服务的 API Key",
+    "saveLabel": "保存"
+  }
+}

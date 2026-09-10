@@ -1,0 +1,26 @@
+{
+  "name": "skill-credentials",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.web.json",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "start": "node src/server.ts",
+    "configure": "node src/cli.ts configure",
+    "configure-page": "node src/cli.ts configure-page",
+    "status": "node src/cli.ts status",
+    "test": "node --test tests/*.test.ts",
+    "test:native": "node tests/native-smoke.ts"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.1",
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "@napi-rs/keyring": "2.0.0"
+  }
+}

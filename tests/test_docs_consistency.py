@@ -135,7 +135,7 @@ class DocsConsistencyTests(unittest.TestCase):
             "loop_cleanup.py": ["minimax-spritesheet.md"],
             "motion_pipeline.py": ["minimax-spritesheet.md"],
             "create_explainer.py": ["explainer.md"],
-            "oil_motion_config.py": ["SKILL.md"],
+            "oil_motion_config.py": [],  # 原终端入口不再作为默认命令示例
         }
         for snippet, expected in expectations.items():
             self.assertEqual(
@@ -143,6 +143,12 @@ class DocsConsistencyTests(unittest.TestCase):
                 expected,
                 f"{snippet} 的命令示例不在唯一事实源 {expected}",
             )
+
+    def test_page_setup_and_real_video_submission_share_profile(self) -> None:
+        skill = read("SKILL.md")
+        self.assertIn("profile.ts\" setup default", skill)
+        self.assertIn("profile.ts\" status default", skill)
+        self.assertIn("profile.ts\" run default -- python3", read("references/prompting.md"))
 
     def test_canonical_sections_not_duplicated(self) -> None:
         docs = {path.name: path.read_text(encoding="utf-8") for path in DOC_PATHS}
