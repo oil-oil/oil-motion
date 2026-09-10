@@ -1,6 +1,6 @@
 ---
 name: oil-motion
-description: "Design, implement, optimize, and explain interactive web animations driven by scroll, pointer, drag, touch, device orientation, audio, data, or component state. Use when a webpage needs responsive visual motion for products, interfaces, diagrams, characters, or scene transitions."
+description: "设计、实现和优化由滚动、指针、拖动、触摸、设备方向、音频、数据或组件状态驱动的网页交互动画，包含素材生成、时间轴和运行时。用户需要产品、界面、图解或角色的交互运动时使用。不用于普通静态页面、简单 CSS 属性修复或独立成片视频剪辑；已有素材时不强制调用生成服务。"
 ---
 
 # Oil Motion
@@ -10,7 +10,7 @@ description: "Design, implement, optimize, and explain interactive web animation
 确定性流水线需要 Python 3、Pillow、ffmpeg 和 ffprobe：
 
 ```bash
-OIL_MOTION="$HOME/.codex/skills/oil-motion"
+OIL_MOTION="<当前 SKILL.md 所在的绝对目录>"
 python3 -m pip install -r "$OIL_MOTION/scripts/requirements.txt"
 ```
 
@@ -25,7 +25,7 @@ python3 "$OIL_MOTION/scripts/oil_motion_config.py" status
 python3 "$OIL_MOTION/scripts/oil_motion_config.py" set
 ```
 
-密钥保存在 `~/.config/oil-motion/config.json`。不得写入项目、提示词、命令参数、日志或任务元数据。
+新密钥保存在系统凭据库，`~/.config/oil-motion/config.json` 只保存引用；旧明文配置仅兼容读取，运行配置入口后替换为引用。系统后端不可用时失败，不降级写明文。不得写入项目、提示词、命令参数、日志或任务元数据。
 
 ## 四个唯一事实源
 
@@ -115,7 +115,7 @@ reduced_motion: <静态替代状态>
 
 1. 有角色或需要身份一致时，先写 Identity Bible。
 2. 生成并验收 `K0…Kn`；每段只承担一个主要语义变化，片段 `i` 使用 `Ki → Ki+1`。
-3. 关键帧生成时必须严格按照 `aspect_ratio` 传入对应尺寸（如 16:9 传 `1792x1024`，9:16 传 `1024x1792`，1:1 传 `1024x1024`），确保从源头获得原生构图。至少覆盖最大 CSS 尺寸乘目标 DPR，按最终裁切验收。
+3. 按 `aspect_ratio` 选择工具实际支持的尺寸，并核对返回图片的真实宽高比。`1792x1024` 并非 16:9，不能标为原生 16:9；不支持精确比例时先留足裁切安全区，在任务目录中明确裁切或补边策略，再按最终视口验收。尺寸至少覆盖最大 CSS 尺寸乘目标 DPR。
 4. `background_owner: page` 时，使用 `$imagegen` 直接生成真实 Alpha PNG；不得先生成色底再反向抠图。视频模型需要色键输入时，再由 `composite_alpha_keyframe.py` 从透明源合成副本。
 5. 提示词、首尾帧模式和提交方式见 [references/prompting.md](references/prompting.md)（严格区分时钟注视与展台自转；一镜到底按范式提供锚点约束）。已有视频或序列帧时跳过生成，保留原始素材并从分析开始。
 

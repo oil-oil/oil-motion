@@ -11,10 +11,12 @@ import stat
 import sys
 from pathlib import Path
 from typing import Any
+import secure_credentials
 
 
 CONFIG_FILE_ENV = "OIL_MOTION_CONFIG_FILE"
 API_KEY_ENV = "ZENMUX_API_KEY"
+CREDENTIAL_REF = 'oil-motion/zenmux/default'
 
 
 def config_path() -> Path:
@@ -46,6 +48,9 @@ def configured_api_key(path: Path | None = None) -> tuple[str, str]:
     config = read_config(path)
     zenmux = config.get("zenmux")
     if isinstance(zenmux, dict):
+        if zenmux.get('credential_ref'):
+            key = secure_credentials.read(zenmux['credential_ref'])
+            return (key, '系统凭据库') if key else ('', '')
         stored_key = zenmux.get("api_key")
         if isinstance(stored_key, str) and stored_key.strip():
             return stored_key.strip(), str(path or config_path())
@@ -90,7 +95,9 @@ def set_api_key(path: Path | None = None) -> int:
     zenmux = config.get("zenmux")
     if not isinstance(zenmux, dict):
         zenmux = {}
-    zenmux["api_key"] = key
+    secure_credentials.save(CREDENTIAL_REF, key)
+    zenmux.pop('api_key', None)
+    zenmux['credential_ref'] = CREDENTIAL_REF
     config["zenmux"] = zenmux
     target = write_config(config, path)
     print(f"已保存：{target}")
@@ -102,6 +109,10 @@ def clear_api_key(path: Path | None = None) -> int:
     config = read_config(target)
     zenmux = config.get("zenmux")
     if isinstance(zenmux, dict):
+        reference = zenmux.get('credential_ref')
+        if reference:
+            secure_credentials.delete(reference)
+            zenmux.pop('credential_ref', None)
         zenmux.pop("api_key", None)
         if zenmux:
             config["zenmux"] = zenmux

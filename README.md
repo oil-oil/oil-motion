@@ -150,7 +150,7 @@ Agent 会先运行预算脚本并直接采用最合适的一种主方案，不�
 
 ## 第一次生成动画
 
-第一次需要生成动画时，Agent 会引导配置所需的 API Key。密钥只保存在本机，之后会自动读取，不需要重复输入。
+第一次需要生成动画时，Agent 会引导配置所需的 API Key。密钥通过终端隐藏输入存入系统凭据库，普通配置只保留引用。需安装 `scripts/requirements.txt` 中的 keyring 依赖；后端不可用时不会降级保存明文。也可复用运行环境中的凭据，不要发到聊天。
 
 ## 技术资料
 
@@ -159,3 +159,25 @@ Agent 会先运行预算脚本并直接采用最合适的一种主方案，不�
 ## License
 
 [MIT](./LICENSE)
+
+## 配置、依赖与使用边界
+
+需要 Python、FFmpeg 与所选生成服务；系统凭据需要 scripts/requirements.txt 中的 keyring。先复用运行环境凭据，新增配置不写明文 Key。
+
+生成素材会发送给所选供应商；处理结果需核对帧、尺寸、循环和资源预算，单次生成不代表全部验收通过。
+
+使用示例：
+
+```text
+用 oil-motion 实现随指针变化的角色方向动画。
+```
+
+## GitHub 安装
+
+把 [仓库地址](https://github.com/oil-oil/oil-motion) 交给 Agent，要求按 README 安装；也可运行：
+
+```bash
+npx skills add oil-oil/oil-motion
+```
+
+安装后由宿主重新加载 Skill。

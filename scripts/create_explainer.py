@@ -12,7 +12,7 @@ from typing import Any
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_PATH = SKILL_ROOT / "assets" / "motion-explainer-template.html"
-CONFIG_TOKEN = "__MOTION_EXPLAINER_CONFIG__"
+CONFIG_PLACEHOLDER = "__MOTION_EXPLAINER_CONFIG__"
 DRIVERS = ("pointer-angle", "pointer-x", "drag", "scroll", "autoplay")
 PLAY_MODES = ("loop", "pingpong", "once")
 
@@ -177,7 +177,7 @@ def main() -> None:
         raise SystemExit(f"找不到模板：{TEMPLATE_PATH}")
 
     template = TEMPLATE_PATH.read_text(encoding="utf-8")
-    if template.count(CONFIG_TOKEN) != 1:
+    if template.count(CONFIG_PLACEHOLDER) != 1:
         raise SystemExit("模板配置占位符缺失或不唯一。")
 
     config = build_config(args)
@@ -186,7 +186,7 @@ def main() -> None:
         ensure_ascii=False,
         separators=(",", ":"),
     ).replace("</", "<\\/")
-    output = template.replace(CONFIG_TOKEN, embedded)
+    output = template.replace(CONFIG_PLACEHOLDER, embedded)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(output, encoding="utf-8")
