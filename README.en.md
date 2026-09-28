@@ -34,13 +34,13 @@ Interface transitions, button feedback, and layout motion that CSS, JavaScript, 
 
 ## Animations it fits
 
-- **Continuous One-Shot transitions via scrolling**: Infinite scale zoom-throughs (macro universe to microchip), foreground object wipe passes, temporal weathering, and gravitational spatial folds.
-- **As the page scrolls down**: Products assemble, disassemble into exploded views, enter chip silicon, or switch states.
-- **As the mouse moves**: Avatars and characters gaze around a clock-face circle (strictly camera-facing), or hardware products execute full 360° turntable showcase rotations.
-- **Animation follows gestures**: Forward, backward, or scrub-holding at precise positions.
-- **Mobile interactive controls**: Touch drag and device gyroscope tilting with smooth damping.
-- **State changes**: Component events trigger state-driven semantic video transitions.
-- **Idle to interaction**: Plays ambient motion when idle, smoothly snapping to real-time input follow mode once user interacts.
+- **As the page scrolls down**: A product unfolds into an exploded view, the camera moves inside its structure, or it switches between states.
+- **When scrolling through several scenes**: Chained video segments form one continuous shot, such as pushing in from a city skyline all the way to a microchip, or passing to the next scene behind a foreground object or through a matching shape.
+- **As the mouse moves**: A character keeps facing the screen while its gaze follows the cursor, or a hardware product turns 360° on a turntable as you drag.
+- **While dragging**: The animation moves forward, backward, or holds at a precise position with the gesture.
+- **On mobile**: Touch or device tilt controls the subject's orientation and depth.
+- **On click, hover, or state change**: The matching transition plays, and reversing the input rewinds from the current frame.
+- **When idle**: Subtle motion or a loop plays, then hands over to live input as soon as the user interacts.
 
 These animations fit product intros, character interactions, interaction demos, data changes, and chapter transitions. Oil Motion also handles motion continuity, frame clarity, loading size, and mobile performance.
 

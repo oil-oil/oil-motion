@@ -36,7 +36,7 @@ python3 "$OIL_MOTION/scripts/optimize_motion.py" interpolate \
 
 同时检查原始与插帧接触表。新增重影、双轮廓、边缘撕裂、部件穿插、结构扭曲、亮度闪帧或中心突变时，插帧失败；改用合格的原始帧，或重新生成母版，不得把插帧伪影带入编译。
 
-`frame_policy=native` 仍需输出原始帧接触表和分析报告，只是不生成虚构中间帧。视频路线通过 `compile_scroll_video.py --frame-policy` 统一执行相应分支。
+`frame_policy=native` 仍需输出原始帧接触表和分析报告，只是不生成虚构中间帧。视频路线由 `compile_scroll_video.py --frame-policy` 统一执行对应分支；图集路线的原始帧提取见 [alpha-atlas.md](alpha-atlas.md)。
 
 ## 裁剪与拼接
 

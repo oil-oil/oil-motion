@@ -40,9 +40,9 @@ node "$OIL_MOTION/scripts/credential-ui/src/profile.ts" setup default
 
 ### 1. 锁定用户意图
 
-用户只有模糊目标时，先读 [references/concepts.md](references/concepts.md)，给出最多三个真正不同的方向（含旋转物理分型与一镜到底范式）；要求已经明确时直接写 Concept Contract。
+用户只有模糊目标时，先读 [references/concepts.md](references/concepts.md)，给出最多三个真正不同的方向；要求已经明确时直接写 Concept Contract。
 
-需要外部案例启发时，按表达目的选读 [references/motion-patterns.md](references/motion-patterns.md) 中的对应模式；先区分素材语义变化、容器编排和 UI 状态，再决定哪些部分进入生成流程。
+需要外部案例启发时，按表达目的选读 [references/motion-patterns.md](references/motion-patterns.md)。先分清哪些变化属于素材本身、哪些只是容器编排或 UI 状态，只有前者进入生成流程。
 
 ```yaml
 subject_count: <number>
@@ -97,49 +97,48 @@ scene_continuity: <仅背景属于视频时填写>
 frame_policy: native | interpolate
 target_fps: <由源素材和运行时需求决定>
 quality_target: <分辨率、DPR 和文件预算>
-aspect_ratio: 16:9 | 9:16 | 1:1 | 21:9 | custom
-pixel_dimensions: <宽x高，由比例与DPR派生>
+pixel_dimensions: <宽x高，由合同的 aspect_ratio 与 DPR 派生>
 reduced_motion: <静态替代状态>
 ```
 
 `parameter_space` 描述素材时间轴，不描述页面布局：`linear` 是有起止的时间轴，`circular` 是闭环，`2d` 是二维采样，`discrete` 是互不连续的状态。不要把二维或无序状态压成一条线性视频。
 
-`frame_policy` 规则：`scrub`（随动定位）对采样密度敏感，若源帧率可见跳步应在 Brief 中规划 `interpolate` 插帧；原始帧率已足够或插帧易产生重影伪影时使用 `native`。
+`frame_policy` 与 `target_fps` 的取舍标准见 [references/optimization.md](references/optimization.md)。
 
 整组位移、缩放、旋转、裁切和时间映射由程序完成；关节、结构、材质、接触和遮挡变化由生成模型完成。如果只移动整张图不能保持自然，就生成完整动作，不继续叠加 CSS 补丁。
 
-### 3. 制作关键帧
+### 3. 自动选择交付与运行时
 
-1. 有角色或需要身份一致时，先写 Identity Bible。
-2. 生成并验收 `K0…Kn`；每段只承担一个主要语义变化，片段 `i` 使用 `Ki → Ki+1`。
-3. 用 `image_job.py` 生成关键帧：按 `aspect_ratio` 传尺寸，并核对脚本报告的实际宽高比；尺寸至少覆盖最大 CSS 尺寸乘目标 DPR。真实产品、既定角色或上一张关键帧用 `--image` 作为参考输入，不只凭文字描述。
-4. `background_owner: page` 传 `--background transparent`，脚本会拒收没有真实 Alpha 的结果；不得先生成色底再反向抠图。视频模型需要色键输入时，由 `composite_alpha_keyframe.py` 从透明源合成副本。`background_owner: video` 传 `--background opaque`，场景直接画进关键帧。
-5. 命令、尺寸对照、提示词、首尾帧模式和提交方式见 [references/prompting.md](references/prompting.md)（严格区分时钟注视与展台自转；一镜到底按范式提供锚点约束）。宿主自带的图片工具同样能输出真实 Alpha 并接受参考图时也可以使用，验收标准不变。已有视频或序列帧时跳过生成，保留原始素材并从分析开始。
-
-### 4. 先做 Pilot
-
-批量生成前，只完成第一组关键帧、第一段视频和真实页面挂载。按 [references/qa.md](references/qa.md) 通过 Pilot 硬门后才能量产；失败就修正上游，不在运行时掩盖。
-
-### 5. 自动选择交付与运行时
-
-运行 `motion_budget.py --strict`，显式传入合同中的 `background_owner` 和 `time_control`，保存 `build/motion-budget.json`。脚本分别返回：
+生成任何素材前，用 Brief 中的计划帧数、显示尺寸和参数空间运行 `motion_budget.py --strict`，显式传入合同中的 `background_owner` 和 `time_control`，保存 `build/motion-budget.json`。Pilot 按这个结果挂载到真实页面；之后帧数或尺寸变化就重新预算。脚本分别返回：
 
 - `delivery.selected`：`baked-video | chroma-video | alpha-atlas`。
 - `runtime.controller`：`frame-scrub | segment-playback | autonomous-playback`。
 
 格式选择与播放方式是两件事，不得互相推断。命令和决策顺序见 [references/delivery-selection.md](references/delivery-selection.md)。按结果只读取一条媒体路线：
 
-- `alpha-atlas`：[references/minimax-spritesheet.md](references/minimax-spritesheet.md)
+- `alpha-atlas`：[references/alpha-atlas.md](references/alpha-atlas.md)
 - `chroma-video`：[references/chroma-video.md](references/chroma-video.md)
 - `baked-video`：[references/baked-video.md](references/baked-video.md)
+
+### 4. 制作关键帧
+
+1. 有角色或需要身份一致时，先写 Identity Bible。
+2. 生成并验收 `K0…Kn`；每段只承担一个主要语义变化，片段 `i` 使用 `Ki → Ki+1`。`clip_continuity: chain` 时，第 2 段起的首帧改用上一段验收后的实际尾帧，尾帧仍是计划关键帧。
+3. 用 `image_job.py` 生成关键帧：按 `aspect_ratio` 传尺寸，并核对脚本报告的实际宽高比；尺寸至少覆盖最大 CSS 尺寸乘目标 DPR。真实产品、既定角色或上一张关键帧用 `--image` 作为参考输入，不只凭文字描述。
+4. `background_owner: page` 传 `--background transparent`，脚本会拒收没有真实 Alpha 的结果；不得先生成色底再反向抠图。视频模型需要色键输入时，由 `composite_alpha_keyframe.py` 从透明源合成副本。`background_owner: video` 传 `--background opaque`，场景直接画进关键帧。
+5. 命令、尺寸对照、提示词、首尾帧模式和提交方式见 [references/prompting.md](references/prompting.md)。宿主自带的图片工具同样能输出真实 Alpha 并接受参考图时也可以使用，验收标准不变。已有视频或序列帧时跳过生成，保留原始素材并从分析开始。
+
+### 5. 先做 Pilot
+
+批量生成前，只完成第一组关键帧、第一段视频，并按已选路线挂载到真实页面。按 [references/qa.md](references/qa.md) 通过 Pilot 硬门后才能量产；失败就修正上游，不在运行时掩盖。
 
 ### 6. 生成并逐段验收
 
 按 [references/prompting.md](references/prompting.md) 生成母版，按 [references/qa.md](references/qa.md) 验收内容与连续帧链。`chain` 模式必须同时验证生成输入接力和相邻成片解码后的输出接缝；任一失败都停止后续生产。
 
-### 7. 评估帧策略（插帧/原始帧）、清理与编译时间轴
+### 7. 帧准备、清理与编译时间轴
 
-按 [references/optimization.md](references/optimization.md) 执行 `frame_policy`（`interpolate` 必须检查重影与伪影，不合格退回 `native` 或重生成），再进入已选择的媒体路线。所有裁剪和拼接都要检查新产生的相邻帧；不得用一次远距离跳帧替代缓慢尾部变化。
+按 [references/optimization.md](references/optimization.md) 执行 `frame_policy`（插帧出现重影或伪影时退回 `native` 或重新生成），再按已选媒体路线清理和编译。所有裁剪和拼接都要检查新产生的相邻帧；不得用一次远距离跳帧替代缓慢尾部变化。
 
 编译后生成 `build/timeline.json`，字段语义只以 [references/runtime.md](references/runtime.md) 的时间轴规范为准。时间值必须由最终编译结果生成，不手工抄写。
 

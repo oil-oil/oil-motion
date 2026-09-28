@@ -82,6 +82,7 @@ class DocsConsistencyTests(unittest.TestCase):
             "navigation",
             "scene",
             "destination",
+            "aspect_ratio",
         ):
             self.assertNotIn(
                 field, top_level_fields, f"Motion Brief 复制了合同字段 {field}"
@@ -134,8 +135,8 @@ class DocsConsistencyTests(unittest.TestCase):
             "verify-chain": ["qa.md"],
             "compile_scroll_video.py": ["baked-video.md", "chroma-video.md"],
             "optimize_motion.py": ["optimization.md"],
-            "loop_cleanup.py": ["minimax-spritesheet.md"],
-            "motion_pipeline.py": ["minimax-spritesheet.md"],
+            "loop_cleanup.py": ["alpha-atlas.md"],
+            "motion_pipeline.py": ["alpha-atlas.md"],
             "create_explainer.py": ["explainer.md"],
             "oil_motion_config.py": [],  # 原终端入口不再作为默认命令示例
         }
@@ -206,7 +207,7 @@ class DocsConsistencyTests(unittest.TestCase):
         self.assertNotIn("SHA-256 完全一致", doc)
 
     def test_minimax_keeps_only_atlas_specifics(self) -> None:
-        doc = read("references/minimax-spritesheet.md")
+        doc = read("references/alpha-atlas.md")
         # 图集路线专属命令仍在
         self.assertIn("loop_cleanup.py", doc)
         self.assertIn("atlas", doc)
@@ -281,7 +282,7 @@ class DocsConsistencyTests(unittest.TestCase):
         self.assertIn("Concept Contract", doc)
         self.assertIn("Identity Bible", doc)
         self.assertIn("场景背景段（baked 路线）", doc)
-        self.assertIn("视频色键段（仅 chroma 路线）", doc)
+        self.assertIn("视频色键段（page 路线）", doc)
         self.assertIn("直接生成真实透明背景 PNG", doc)
         self.assertIn("composite_alpha_keyframe.py", doc)
         self.assertIn("--stage", doc)

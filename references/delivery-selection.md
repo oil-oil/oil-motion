@@ -17,7 +17,7 @@
 
 ## 2. 执行预算
 
-使用项目的真实变量运行：
+生成素材前用 Brief 的计划帧数（目标帧率 × 时长）运行一次，帧准备完成后再用实际帧数复核：
 
 ```bash
 python3 "$OIL_MOTION/scripts/motion_budget.py" \
@@ -71,7 +71,7 @@ capacity = columns * rows
 乘 DPR 不超过 576 时才成立，不能为了塞进一张图而牺牲已确认的清晰度。
 
 同理，16×14 排列能否放进一张图只取决于单格尺寸：宽最多 256 px，高最多约
-292 px。示例中的高帧数图集使用的是更小单格，不是绕过了浏览器纹理上限。
+292 px。帧数很多的图集能放进一张图，靠的是更小的单格，不是绕过了浏览器纹理上限。
 
 当前运行时只接受一张主图集。圆环或一维时间轴超出单图集预算时自动选择
 `chroma-video`；真正的二维参数仍需要 `alpha-atlas`，超预算时降低参数采样密度、
@@ -100,7 +100,7 @@ capacity = columns * rows
 
 ## 后续路由
 
-- `alpha-atlas`：读 [minimax-spritesheet.md](minimax-spritesheet.md)。
+- `alpha-atlas`：读 [alpha-atlas.md](alpha-atlas.md)。
 - `chroma-video`：读 [chroma-video.md](chroma-video.md)。
 - `baked-video`：读 [baked-video.md](baked-video.md)。
 - 控制器实现：读 [runtime.md](runtime.md)。
