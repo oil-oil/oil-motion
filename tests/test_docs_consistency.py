@@ -127,6 +127,8 @@ class DocsConsistencyTests(unittest.TestCase):
         expectations = {
             "motion_budget.py": ["delivery-selection.md"],
             "video_job.py": ["prompting.md"],
+            "image_job.py": ["prompting.md"],
+            "composite_alpha_keyframe.py": ["prompting.md"],
             "compose_travel_frames.py": ["prompting.md"],
             "approve-pilot": ["qa.md"],
             "verify-chain": ["qa.md"],
@@ -148,7 +150,17 @@ class DocsConsistencyTests(unittest.TestCase):
         skill = read("SKILL.md")
         self.assertIn("profile.ts\" setup default", skill)
         self.assertIn("profile.ts\" status default", skill)
-        self.assertIn("profile.ts\" run default -- python3", read("references/prompting.md"))
+        prompting = read("references/prompting.md")
+        for script in ("image_job.py", "video_job.py"):
+            self.assertIn(f"profile.ts\" run default -- python3 \"$OIL_MOTION/scripts/{script}\"", prompting)
+
+    def test_keyframes_use_bundled_generator_not_host_tool(self) -> None:
+        for path in [ROOT / "SKILL.md", *sorted((ROOT / "references").glob("*.md"))]:
+            self.assertNotIn("$imagegen", path.read_text(encoding="utf-8"), f"{path.name} 依赖宿主专属生图工具")
+        skill = read("SKILL.md")
+        self.assertIn("--background transparent", skill)
+        self.assertIn("--background opaque", skill)
+        self.assertNotIn("1792x1024", read("references/prompting.md"))
 
     def test_canonical_sections_not_duplicated(self) -> None:
         docs = {path.name: path.read_text(encoding="utf-8") for path in DOC_PATHS}

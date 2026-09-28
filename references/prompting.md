@@ -1,17 +1,45 @@
-# AI 视频动作提示词与任务提交
+# 关键帧、视频提示词与任务提交
 
-本文档是提示词写法与 `video_job.py` 提交命令的唯一事实源。路线选择见
-[delivery-selection.md](delivery-selection.md)，Pilot 与帧链硬门命令见
+本文档是关键帧与视频提示词写法，以及 `image_job.py`、`video_job.py` 提交命令的唯一事实源。
+路线选择见 [delivery-selection.md](delivery-selection.md)，Pilot 与帧链硬门命令见
 [qa.md](qa.md)。
 
-## 准备首尾帧
+## 目录
 
-生产主流程（先生图、再生视频、逐段串联）见 SKILL.md 主流程；本节只覆盖提示词侧的
-首尾帧准备。视频提示词只描述两张已验收关键帧之间如何连续变化，不再承担终点设计；
-主体身份、产品结构、Logo、构图和风格必须先在关键帧图片中解决。
+- [生成关键帧](#生成关键帧)
+- [画幅与尺寸](#画幅与尺寸)
+- [写提示词前先决定](#写提示词前先决定)
+- [提交视频任务（video_job.py）](#提交视频任务video_jobpy)
+- 提示词段落：[身份锁定](#通用身份锁定段)、[固定镜头](#固定镜头段)、[场景背景](#场景背景段baked-路线)、[视频色键](#视频色键段仅-chroma-路线)
+- 按动作类型：[旋转与视向](#旋转转头与视向提示词)、[一镜到底](#影视级一镜到底连续镜头提示词)、[产品拆解](#产品拆解与爆炸图)、[镜头穿越](#镜头穿越)、[多段串联](#多段关键帧串联)、[指针二维](#指针二维动画)、[逐帧 scrub](#逐帧-scrub-时间轴)、[分段播放](#分段播放转场)、[离散状态](#离散状态动画)、[产品 360°](#产品-360-提示词)
+- [失败修复提示词](#失败修复提示词)、[负面约束](#负面约束)、[分辨率和时长](#分辨率和时长)
 
-`background_owner=page` 时，关键帧图片使用内置 `$imagegen` 直接生成真实透明背景 PNG，
-保留原始 Alpha；不要让生图模型生成绿色、品红、灰色、白色或棋盘格背景。提交视频前，
+## 生成关键帧
+
+生产主流程（先生图、再生视频、逐段串联）见 SKILL.md 主流程。视频提示词只描述两张已验收
+关键帧之间如何连续变化，不再承担终点设计；主体身份、产品结构、Logo、构图和风格必须先在
+关键帧图片中解决。
+
+关键帧通过凭据入口运行 `image_job.py`：
+
+```bash
+node "$OIL_MOTION/scripts/credential-ui/src/profile.ts" run default -- python3 "$OIL_MOTION/scripts/image_job.py" \
+  --prompt-file source/K0.txt \
+  --image source/product-reference.png \
+  --background transparent \
+  --size 2048x1152 \
+  --output source/K0-alpha.png
+```
+
+- `--background` 必填。`background_owner=page` 传 `transparent`，直接生成真实透明背景 PNG；
+  脚本检查 Alpha 通道、四角透明和可见主体，不合格的结果另存为 `*.rejected.png` 并以非零状态退出。
+  `background_owner=video` 传 `opaque`，提示词写明完整场景、光线和地面接触。
+- `--image` 可重复。真实产品图、身份参考或上一张已验收关键帧都作为输入；提示词按顺序
+  写明“图 1 是……”以及哪些部分必须保持不变。没有参考图时才走文生图。
+- 不确定参数时先加 `--dry-run`：只校验并打印请求摘要，不计费，也不需要 Key。
+- 输出已存在时默认停止；确认要替换后才加 `--force`。
+
+`background_owner=page` 时不要让生图模型画绿色、品红、灰色、白色或棋盘格背景。提交视频前，
 再从透明源确定性合成视频模型需要的均匀色键副本：
 
 ```bash
@@ -37,6 +65,24 @@ python3 "$OIL_MOTION/scripts/compose_travel_frames.py" subject.png \
 该工具只负责扁平轨道、缩放和精确位移。中间的结构形变、接触关系和前后遮挡仍由首尾帧
 约束下的视频模型完成。
 
+## 画幅与尺寸
+
+Concept Contract 锁定 `aspect_ratio` 后，关键帧、视频和编译输出沿用同一比例：
+
+| `aspect_ratio` | 关键帧 `--size` | 视频画幅 | 常见容器 |
+| --- | --- | --- | --- |
+| `16:9` | `2048x1152` 或 `1536x864` | 从首帧推断为 `16:9` | 横向全屏、Hero、宽幅转场 |
+| `9:16` | `1152x2048` 或 `864x1536` | `9:16` | 竖屏全屏、移动端故事 |
+| `1:1` | `1024x1024` 或 `2048x2048` | `1:1` | 卡片、头像、方形视窗 |
+| `21:9` | `2016x864` | `21:9` | 宽银幕叙事 |
+
+默认图片模型（gpt-image-2 系列）要求宽高都是 16 的倍数、最长边不超过 3840、长短边之比
+不超过 3:1、总像素在 655,360 到 8,294,400 之间，脚本会在联网前校验。换用其他模型时以
+该模型支持的尺寸为准，并核对脚本报告的实际宽高比。
+
+容器是 16:10、4:3 或其他比例时，选最接近的生成比例，在合同中写明裁切或补边策略，再按
+最终视口验收。编译输出宽度由最大 CSS 尺寸乘目标 DPR 决定，见各媒体路线的编译命令。
+
 ## 写提示词前先决定
 
 提示词从 Concept Contract 和 Identity Bible 出发，不得加入用户未确认的主体、人数、
@@ -53,27 +99,14 @@ python3 "$OIL_MOTION/scripts/compose_travel_frames.py" subject.png \
    绿色还是洋红色键，以及如何保证视频四角与时间维度均匀。
 6. 最终会按时间、角度、二维位置还是状态取帧。
 
-图片模型负责关键帧并直接输出透明通道；视频模型负责动作语义和画面连续性，不负责精确
+图片模型负责关键帧，`page` 路线直接输出透明通道；视频模型负责动作语义和画面连续性，不负责精确
 切帧、Alpha 视频、帧编号、压缩或图集。不要让视频提示词承担透明通道或图集输出。
-
-## 画幅比例与分辨率映射
-
-生图与视频模型的分辨率必须由 `concept-contract.yaml` 的 `aspect_ratio` 决定，不可盲目使用默认尺寸：
-
-| 目标场景 | 比例 (`aspect_ratio`) | 图片模型推荐尺寸 (`image_job.py --size`) | 视频模型行为 (`video_job.py`) | 编译目标 |
-| :--- | :--- | :--- | :--- | :--- |
-| **桌面全屏 / 沉浸式 Hero / 宽幅转场** | `16:9` | `1792x1024`（或按需缩放到 `1280x720` / `1920x1080`） | 自动推断为 `16:9`，生成宽屏过渡 | `1920x1080` All-Intra |
-| **移动端全屏 / 短视频 / 竖屏故事** | `9:16` | `1024x1792`（或 `720x1280` / `1080x1920`） | 自动推断为 `9:16`，生成竖屏过渡 | `1080x1920` All-Intra |
-| **局部微交互 / 头像 / 独立方形视窗** | `1:1` | `1024x1024` | 自动推断为 `1:1`，生成方形过渡 | `1080x1080` All-Intra |
-| **宽银幕全景叙事** | `21:9` | `1792x768`（裁剪或缩放） | 自动推断为 `21:9` | `2560x1080` All-Intra |
-
-**核心禁令**：严禁在未确认宿主容器的情况下直接生成 `1:1` 方图充当全屏桌面内容，否则会导致严重的左右黑屏或上下 40% 暴力裁切。
 
 ## 提交视频任务（video_job.py）
 
 `video_job.py` 用于提交、轮询和下载 ZenMux / MiniMax 原生视频任务，把重复的接口
-调用、图片编码、状态轮询和结果保存程序化。提交前按 SKILL.md 的“首次配置 API Key”
-检查一次即可；脚本优先读取 `ZENMUX_API_KEY`，没有环境变量时读取本地配置。
+调用、图片编码、状态轮询和结果保存程序化。提交前按 SKILL.md 的“首次配置”检查一次
+凭据，命令始终经 `profile.ts run default --` 运行。
 
 模式与参数约束：
 
@@ -108,7 +141,6 @@ node "$OIL_MOTION/scripts/credential-ui/src/profile.ts" run default -- python3 "
   --first-frame source/first-frame.png \
   --loop-frame \
   --resolution 768p \
-  --ratio 1:1 \
   --duration 5 \
   --seed 42 \
   --output source/master.mp4 \
@@ -186,7 +218,7 @@ background replacement, and no transparency.
 ## 视频色键段（仅 chroma 路线）
 
 仅当 Concept Contract 锁定 `background_owner: page` 时追加到视频提示词。首尾关键帧
-先由 `$imagegen` 直接生成透明 PNG，再由 `composite_alpha_keyframe.py` 合成为下方视频
+先由 `image_job.py --background transparent` 直接生成透明 PNG，再由 `composite_alpha_keyframe.py` 合成为下方视频
 输入；不要把这段用于图片生图提示词。默认 `#00FF00`，主体含绿色时改用 `#FF00FF`。
 
 ```text
@@ -416,18 +448,6 @@ background, lighting, and correct motion unchanged. Fix only this issue:
 - `Continue through the angle without pausing or snapping.`
 - `Make the last frame match the first frame exactly for a seamless loop.`
 
-## 拒绝过度装饰与反 AI 杂质
-
-严禁落入常见的“AI 默认噪点”与“无脑科幻杂质”陷阱，无论用户指定何种风格，都必须剔除无意义的装饰性干扰：
-
-1. **拒绝无端科幻元素与虚假细节堆砌**：
-   - 严禁在用户未明确要求的题材中机械填入 `cyberpunk, neon glow, intricate circuitry, mechanical wires, hyperdetailed 8k, technical panels` 等套路词汇。
-   - 避免满画面的细碎发光线条，这会破坏主体轮廓与画面焦点，造成廉价塑料感与视觉疲劳。
-2. **拒绝表面噪点覆盖，保持视觉呼吸感**：
-   - 视觉冲击力来自镜头运镜、形态对比与干净利落的画幅反差，而不是堆砌表面碎线；细节只服务于核心叙事焦点，轮廓与非焦点区域严禁装饰性杂质。
-3. **负面约束补充**：
-   - 针对非科幻题材必须剔除：`no unnecessary sci-fi circuitry, no generic cyberpunk neon clutter, no plastic AI noise, no over-detailed artificial lines, no visual noise.`
-
 ## 负面约束
 
 按需要加入，不必机械复制全部：
@@ -437,6 +457,15 @@ No cuts, morphing, identity drift, scale breathing, position drift, duplicated
 limbs, missing limbs, extra objects, blinking, idle sway, motion blur, ghosting,
 frame blending, lighting flicker, shadows on the background, camera movement,
 text, watermark, border, style change, unnecessary sci-fi circuitry, or plastic AI clutter.
+```
+
+用户没有要求科幻题材时，不写 `cyberpunk`、`neon glow`、`intricate circuitry`、
+`hyperdetailed 8k` 这类套路词，也不要用满画面的细碎发光线条充当细节。画面冲击力来自镜头、
+形态对比和干净的轮廓；细节只服务于叙事焦点，非焦点区域保持干净。需要时追加：
+
+```text
+No unnecessary sci-fi circuitry, generic cyberpunk neon clutter, plastic AI
+noise, over-detailed artificial lines, or visual noise.
 ```
 
 ## 分辨率和时长

@@ -28,11 +28,9 @@ node "$SKILL_DIR/scripts/credential-ui/src/profile.ts" setup default
 
 ## 运行业务
 
-通过以下入口运行本 Skill 的真实脚本，`--` 后保留原业务参数：
+`image_job.py` 与 `video_job.py` 都通过 `profile.ts run default --` 运行，`--` 后保留原业务参数。完整可执行命令只维护在[提示词与提交](prompting.md)，不要在别处复制或省略 Pilot、production 等必要参数。
 
-完整业务命令见[提示词与提交](prompting.md)。执行时使用其中已包含的 `profile.ts run default` 包装器，并保留原业务参数。
-
-环境变量优先；缺失时仅从系统库读取当前配置所需的 Key，并只注入可信业务子进程。参数、普通文件和状态输出都不含 Key。使用页面保存的凭据后，后续云端业务命令同样经 run 入口执行，不能只启动配置页后直接运行一个仍仅读环境变量的程序。视频提交的完整可执行示例只维护在[提示词与提交](prompting.md)，其中已使用 run 入口；不要复制或省略 Pilot/production 等必要参数。
+环境变量优先；缺失时仅从系统库读取当前配置所需的 Key，并只注入可信业务子进程。参数、普通文件和状态输出都不含 Key。页面保存的凭据只能经 run 入口读到；直接运行生成脚本会报“读取不到 ZenMux API Key”，此时改用 run 入口，不要让用户重新填写。
 
 系统后端分别为 macOS 钥匙串、Windows 凭据管理器、Linux Secret Service。Linux 需要 secret-tool、用户 D-Bus 和已解锁的桌面凭据服务；缺少后端时停止，不自动安装、解锁或降级明文。当前 macOS 组件有原生假凭据验证；Windows/Linux 适配仍需实机验收。CI、容器与远程服务器使用已有 Secret 注入，不把本机页面开放到网络。
 

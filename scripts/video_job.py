@@ -91,7 +91,7 @@ def request_json(
         with urllib.request.urlopen(request, timeout=120) as response:
             return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        details = exc.read().decode("utf-8", errors="replace")
+        details = exc.read().decode("utf-8", errors="replace").replace(api_key, "[redacted]")
         raise RuntimeError(f"ZenMux API {exc.code}: {details}") from exc
 
 

@@ -36,8 +36,6 @@
 时读取的本地 JSON，不会在浏览器运行时请求。
 
 ```bash
-OIL_MOTION="$HOME/.codex/skills/oil-motion"
-
 python3 "$OIL_MOTION/scripts/create_explainer.py" \
   --title "一张图，240 个方向。" \
   --manifest final/motion.json \

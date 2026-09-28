@@ -2,6 +2,8 @@
   <img src="./assets/readme/hero.svg" width="100%" alt="Oil Motion connects AI-generated continuous motion to web interactions">
 </p>
 
+[中文](./README.md) · **English**
+
 Oil Motion is an agent-agnostic interactive animation Skill. It designs motion, generates continuous frames, prepares animation assets, and wires the final result to page scroll, mouse, drag, touch, or device orientation.
 
 To use it, you only describe what you want to express, which assets you have, and what interaction the animation should follow. The agent handles generation, review, compression, and front-end implementation.
@@ -12,7 +14,23 @@ https://github.com/user-attachments/assets/08e26ad6-ca23-4f31-ac53-44c7692ba99d
 
 ## Installation
 
-Tell your agent: install the oil-motion Skill from "https://github.com/oil-oil/oil-motion".
+Give your agent the repository URL:
+
+```text
+Install the Skill at https://github.com/oil-oil/oil-motion.
+```
+
+Or install it from the command line, then have your agent reload its Skills:
+
+```bash
+npx skills add oil-oil/oil-motion
+```
+
+## Scope
+
+Oil Motion is for interactive animation where the subject itself has to change: a character turning its head, a product coming apart, a material transforming, a camera flying through a scene. It also turns existing green-screen videos or sprite sheets into assets that respond to user input.
+
+Interface transitions, button feedback, and layout motion that CSS, JavaScript, SVG, Lottie, or real-time 3D can handle directly belong in regular front-end work and don't need this asset pipeline. Standalone video editing and one-off illustrations are out of scope too.
 
 ## Animations it fits
 
@@ -85,14 +103,14 @@ Compression follows the actual on-page display size. Larger display areas keep h
 If you already have assets and a motion direction, just say:
 
 ```text
-Use $oil-motion to turn these two product images into an animation that progressively unfolds as the page scrolls.
+Use oil-motion to turn these two product images into an animation that progressively unfolds as the page scrolls.
 The desktop display area is large and must stay sharp; use lighter assets on mobile.
 ```
 
 If you only have product assets and no motion plan yet, let the agent design first:
 
 ```text
-Use $oil-motion to design a continuous scroll-driven animation for this product homepage.
+Use oil-motion to design a continuous scroll-driven animation for this product homepage.
 First propose three directions — what each expresses, how it follows the scroll, and implementation cost.
 Generate key frames and video only after a direction is confirmed.
 ```
@@ -100,7 +118,7 @@ Generate key frames and video only after a direction is confirmed.
 For a character or pet that follows the mouse, describe the range and the desired feel:
 
 ```text
-Use $oil-motion to make this character turn toward the mouse.
+Use oil-motion to make this character turn toward the mouse.
 Motion must respond immediately, but limit rotation speed — no flicker or jitter on fast direction reversals.
 ```
 
@@ -148,11 +166,15 @@ Programs can handle slight drift, color differences, duplicate frames, and encod
 
 ## First-time generation
 
-On the first generation, the agent walks through configuring the required API keys. Keys are stored locally only and read automatically afterward — no need to re-enter them.
+Processing existing videos or frame sequences locally only needs Python 3.10+ and FFmpeg. When key frames or videos need to be generated, Oil Motion calls image and video models through ZenMux by default; both share one API key.
+
+Before the first generation, the agent opens a local setup page where you enter the key yourself. The key goes into the system credential store (macOS Keychain, Windows Credential Manager, or Linux Secret Service) and is reused afterward, so it never has to be pasted into the chat. The setup page needs Node.js 22.18+. If the system credential store is unavailable, setup stops instead of falling back to plain text. It has been verified on macOS so far.
+
+During generation, prompts, reference images, and first and last key frames are sent to ZenMux and the model providers behind it. Every generation is billed, so the agent produces a short pilot first and scales up only after it passes review.
 
 ## Technical reference
 
-Day-to-day use needs no manual scripts. For generation parameters, asset processing, or runtime behavior, see [`SKILL.md`](./SKILL.md) and [`references/`](./references/).
+Day-to-day use needs no manual scripts. For generation parameters, asset processing, or runtime behavior, see [`SKILL.md`](./SKILL.md) and [`references/`](./references/). Credential installation, status checks, and security boundaries are covered in the [setup notes](references/api-key-setup.md) (Chinese).
 
 ## License
 

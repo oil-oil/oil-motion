@@ -62,8 +62,9 @@ def require_api_key(path: Path | None = None) -> str:
     if api_key:
         return api_key
     raise RuntimeError(
-        "尚未配置 ZenMux API Key。请先运行 "
-        "`python3 scripts/oil_motion_config.py set`，配置一次后会自动复用。"
+        "读取不到 ZenMux API Key。先运行 `node scripts/credential-ui/src/profile.ts status default`；"
+        "未配置时用 `setup default` 打开本机页面由用户填写，"
+        "再通过 `profile.ts run default -- python3 <生成脚本>` 运行生成命令。"
     )
 
 
