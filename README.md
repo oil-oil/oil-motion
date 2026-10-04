@@ -176,6 +176,13 @@ Agent 会先运行预算脚本并直接采用最合适的一种主方案，不�
 
 日常使用不需要手动运行脚本。如果需要修改生成参数、资源处理方式或网页运行逻辑，可以继续查看 [`SKILL.md`](./SKILL.md) 和 [`references/`](./references/)；凭据的安装、状态检查和安全边界见[配置说明](references/api-key-setup.md)。
 
+<table width="100%">
+  <tr>
+    <td width="30%" valign="middle"><a href="https://github.com/oil-oil/oil-ui"><img src="https://raw.githubusercontent.com/oil-oil/oil-ui/main/assets/readme/hero.webp" width="250" alt="oil-ui：把 AI 的 UI 设计能力推到极限"></a></td>
+    <td valign="middle"><strong><a href="https://github.com/oil-oil/oil-ui">想让 AI 做出更好的 UI 设计？试试 oil-ui →</a></strong><br>先探索几种风格，再并排挑选，按实际画面打磨。</td>
+  </tr>
+</table>
+
 ## License
 
 [MIT](./LICENSE)
