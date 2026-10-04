@@ -176,12 +176,11 @@ During generation, prompts, reference images, and first and last key frames are 
 
 Day-to-day use needs no manual scripts. For generation parameters, asset processing, or runtime behavior, see [`SKILL.md`](./SKILL.md) and [`references/`](./references/). Credential installation, status checks, and security boundaries are covered in the [setup notes](references/api-key-setup.md) (Chinese).
 
-<table width="100%">
-  <tr>
-    <td width="30%" valign="middle"><a href="https://github.com/oil-oil/oil-ui"><img src="https://raw.githubusercontent.com/oil-oil/oil-ui/main/assets/readme/hero.webp" width="250" alt="oil-ui: push AI UI design further"></a></td>
-    <td valign="middle"><strong><a href="https://github.com/oil-oil/oil-ui">Want better UI designs from AI? Try oil-ui →</a></strong><br>Explore distinct styles, compare them side by side, and refine the rendered result.</td>
-  </tr>
-</table>
+<p align="center">
+  <a href="https://github.com/oil-oil/oil-ui"><img src="https://raw.githubusercontent.com/oil-oil/oil-ui/main/assets/readme/hero.webp" width="600" alt="oil-ui: push AI UI design further"></a>
+  <br>
+  <strong><a href="https://github.com/oil-oil/oil-ui">Want better UI designs from AI? Try oil-ui →</a></strong><br>Explore distinct styles, compare them side by side, and refine the rendered result.
+</p>
 
 ## License
 
