@@ -97,6 +97,24 @@ class ProductionGateTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "批准失效"):
                 GATE.validate_pilot_approval(approval)
 
+    def test_force_override_warns_instead_of_crashing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            approval = self.approval(root)
+
+            (root / "first.png").write_bytes(b"changed")
+            self.assertTrue(GATE.validate_pilot_approval(approval, force=True)["passed"])
+
+            (root / "contract.yaml").write_text(
+                "subject_count: 1\nclip_continuity: independent\n", encoding="utf-8"
+            )
+            self.assertTrue(GATE.validate_pilot_approval(approval, force=True)["passed"])
+
+            mismatch = GATE.verify_frame_chain(
+                root / "first.png", root / "last.png", 2, force=True
+            )
+            self.assertFalse(mismatch["exactSha256Match"])
+
     def test_contract_continuity_requires_unique_top_level_value(self) -> None:
         invalid_contracts = {
             "nested": "metadata:\n  clip_continuity: independent\n",
