@@ -177,10 +177,12 @@ During generation, prompts, reference images, and first and last key frames are 
 Day-to-day use needs no manual scripts. For generation parameters, asset processing, or runtime behavior, see [`SKILL.md`](./SKILL.md) and [`references/`](./references/). Credential installation, status checks, and security boundaries are covered in the [setup notes](references/api-key-setup.md) (Chinese).
 
 <p align="center">
-  <a href="https://github.com/oil-oil/oil-ui"><img src="https://raw.githubusercontent.com/oil-oil/oil-ui/main/assets/readme/hero.webp" width="600" alt="oil-ui: push AI UI design further"></a>
+  <a href="https://ui.oiloil.org/en/?utm_source=github&utm_medium=readme&utm_campaign=oil-motion"><img src="https://raw.githubusercontent.com/oil-oil/oil-ui/main/assets/readme/hero.en.webp" width="600" alt="Oil UI: push AI UI design further"></a>
   <br>
-  <strong><a href="https://github.com/oil-oil/oil-ui">Want better UI designs from AI? Try oil-ui →</a></strong><br>Explore distinct styles, compare them side by side, and refine the rendered result.
+  <strong><a href="https://ui.oiloil.org/en/?utm_source=github&utm_medium=readme&utm_campaign=oil-motion">Want better UI designs from AI? Try Oil UI →</a></strong><br>Explore distinct styles, compare them side by side, and refine the rendered result.
 </p>
+
+More from Oil Oil: [Oil UI](https://ui.oiloil.org/en/?utm_source=github&utm_medium=readme&utm_campaign=oil-motion) (AI UI design skill) · [Oil Studio](https://studio.oiloil.org/en/?utm_source=github&utm_medium=readme&utm_campaign=oil-motion) (Mac auto-zoom screen recorder)
 
 ## License
 
